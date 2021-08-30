@@ -41,9 +41,9 @@ dat <- dat %>%
          z_med = scale(z_med),
          z_aspct = scale(z_aspct),
          z_slope = scale(z_slope),
-         tau = scale(area_km2),
-         t2m_d = scale(area_km2),
-         tp_d = scale(area_km2)
+         tau = scale(tau),
+         t2m_d = scale(t2m_d),
+         tp_d = scale(tp_d)
          )
 ```
 
