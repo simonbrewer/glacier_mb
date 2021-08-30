@@ -3,23 +3,23 @@ library(raster)
 
 glac_sf <- st_read("./data/glacier.shp")
 
-t2m <- stack('~/Dropbox/Data/summer/era5/t2m_2001_2020.nc', varname = 't2m')
+t2m <- stack('~/Dropbox/Data/summer/era5/t2m_2001_2020_yearmean.nc', varname = 't2m')
 glac_t2m <- extract(t2m, glac_sf)
 glac_t2m <- glac_t2m - 273.15
 
-tp <- stack('~/Dropbox/Data/summer/era5/download.nc', varname = 'tp')
+tp <- stack('~/Dropbox/Data/summer/era5/tp_2001_2020_yearmean.nc', varname = 'tp')
 glac_tp <- extract(tp, glac_sf)
 glac_tp <- glac_tp * 24*60*60
 
-glac_sf$t2m_08 <- apply(glac_t2m[, 1:12], 1, mean)
-glac_sf$t2m_18 <- apply(glac_t2m[, 13:24], 1, mean)
+glac_sf$t2m_08 <- apply(glac_t2m[, 6:10], 1, mean)
+glac_sf$t2m_18 <- apply(glac_t2m[, 16:20], 1, mean)
 glac_sf$t2m_d <- glac_sf$t2m_18 - glac_sf$t2m_08
 
-glac_sf$tp_08 <- apply(glac_tp[, 1:12], 1, mean)
-glac_sf$tp_18 <- apply(glac_tp[, 13:24], 1, mean)
+glac_sf$tp_08 <- apply(glac_tp[, 6:10], 1, mean)
+glac_sf$tp_18 <- apply(glac_tp[, 16:20], 1, mean)
 glac_sf$tp_d <- glac_sf$tp_18 - glac_sf$tp_08
 
 glac_sf$area_km2 <- glac_sf$area_m2 / 1e6
 
-st_write(glac_sf, "../data/glacier_clim.shp", update = TRUE)
+st_write(glac_sf, "./data/glacier_clim.shp")
 
