@@ -10,7 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Libraries and what not
 
 ```{r message=FALSE}
-## Base RF model
 set.seed(42)
 
 library(dplyr)
