@@ -36,7 +36,7 @@ dat <- dat_sf %>%
 
 Scaling
 ```{r}
-dat %>%
+dat <- dat %>%
   mutate(area_km2 = scale(area_km2),
          z_med = scale(z_med),
          z_aspct = scale(z_aspct),
