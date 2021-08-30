@@ -24,7 +24,7 @@ library(tmap)
 ## Data processing
 
 ```{r}
-dat_sf <- st_read("../data/glacier_clim.shp")
+dat_sf <- st_read("./data/glacier_clim.shp")
 dat_sf <- dat_sf[sample(1:nrow(dat_sf), 5000), ]
 
 dat <- dat_sf %>%
@@ -32,6 +32,19 @@ dat <- dat_sf %>%
   dplyr::select(mb_mwea, area_km2, z_min, z_med, z_max, z_aspct, z_slope,
                 east, north, tau,
                 t2m_18, t2m_d, tp_18, tp_d)
+```
+
+Scaling
+```{r}
+dat %>%
+  mutate(area_km2 = scale(area_km2),
+         z_med = scale(z_med),
+         z_aspct = scale(z_aspct),
+         z_slope = scale(z_slope),
+         tau = scale(area_km2),
+         t2m_d = scale(area_km2),
+         tp_d = scale(area_km2)
+         )
 ```
 
 ### INLA spatial graph
@@ -52,8 +65,9 @@ g <- inla.read.graph("map.adj")
 ## INLA model
 
 ```{r}
-f1 <- mb_mwea ~ t2m_18 + t2m_d + tp_18 + tp_d + 
-  z_med + z_slope + z_aspct +
+f1 <- mb_mwea ~ t2m_d + tp_d + 
+  z_med + z_slope + z_aspct + 
+  tau + area_km2 +
   f(idarea, model = "bym2", graph = g)
 
 system.time(
