@@ -1,0 +1,102 @@
+---
+title: "04 INLA BYM"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries and what not
+
+```{r message=FALSE}
+## Base RF model
+set.seed(42)
+
+library(dplyr)
+library(sf)
+library(spdep)
+library(INLA)
+library(INLAutils)
+library(tmap)
+```
+
+## Data processing
+
+```{r}
+dat_sf <- st_read("../data/glacier_clim.shp")
+dat_sf <- dat_sf[sample(1:nrow(dat_sf), 5000), ]
+
+dat <- dat_sf %>%
+  st_drop_geometry() %>% 
+  dplyr::select(mb_mwea, area_km2, z_min, z_med, z_max, z_aspct, z_slope,
+                east, north, tau,
+                t2m_18, t2m_d, tp_18, tp_d)
+```
+
+### INLA spatial graph
+
+```{r}
+dat$idarea <- 1:nrow(dat)
+
+# crds <- st_coordinates(dat)
+coo <- cbind(dat$east / 1000,
+           dat$north / 1000)
+
+nb <- graph2nb(gabrielneigh(coo), sym = TRUE)
+
+nb2INLA("map.adj", nb)
+g <- inla.read.graph("map.adj")
+```
+
+## INLA model
+
+```{r}
+f1 <- mb_mwea ~ t2m_18 + t2m_d + tp_18 + tp_d + 
+  z_med + z_slope + z_aspct +
+  f(idarea, model = "bym2", graph = g)
+
+system.time(
+  res1 <- inla(f1, data = dat,
+               control.predictor = list(compute = TRUE),
+               control.compute = list(dic = TRUE, waic = TRUE))
+)
+```
+
+### Model output
+
+```{r}
+summary(res1)
+```
+
+```{r}
+plot_fixed_marginals(res1)
+plot_hyper_marginals(res1)
+```
+
+
+### Obs vs pred
+
+```{r}
+plot_df <- data.frame(obs = dat$mb_mwea,
+                      pred = res1$summary.fitted.values$mean)
+ggplot(plot_df, aes(x = obs, y = pred)) +
+  geom_point()
+```
+
+### Map spatial effect
+
+```{r}
+spatial_re <- res1$summary.random$idarea
+dat_sf$re <- spatial_re$mean[1:nrow(dat_sf)]
+m1 <- tm_shape(dat_sf) +
+  tm_symbols(col = "re", size = 0.25, alpha = 0.5) 
+print(m1)
+```
+
+```{r}
+dat_sf$yhat <- plot_df$pred
+m2 <- tm_shape(dat_sf) +
+  tm_symbols(col = "yhat", size = 0.25, alpha = 0.5) 
+print(m2)
+```
