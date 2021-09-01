@@ -113,3 +113,32 @@ m2 <- tm_shape(dat_sf) +
   tm_symbols(col = "yhat", size = 0.25, alpha = 0.5) 
 print(m2)
 ```
+
+## Interaction example
+
+## INLA model
+
+```{r}
+f2 <- mb_mwea ~ t2m_d + z_med * tp_d + 
+  z_slope + z_aspct + 
+  tau + area_km2 +
+  f(idarea, model = "bym2", graph = g)
+
+system.time(
+  res2 <- inla(f2, data = dat,
+               control.predictor = list(compute = TRUE),
+               control.compute = list(dic = TRUE, waic = TRUE))
+)
+```
+
+### Model output
+
+```{r}
+summary(res2)
+```
+
+```{r}
+plot_fixed_marginals(res2)
+plot_hyper_marginals(res2)
+```
+
