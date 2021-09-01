@@ -1,0 +1,112 @@
+---
+title: "06 Geographical Random Forest"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries and what not
+
+```{r message=FALSE}
+set.seed(42)
+
+library(ggplot2)  # for autoplot() generic
+library(dplyr)
+library(sf)
+library(SpatialML)
+library(tmap)
+```
+
+## Data processing
+
+```{r}
+dat_sf <- st_read("./data/glacier_clim.shp")
+dat_sf <- dat_sf[sample(1:nrow(dat_sf), 5000), ]
+
+crds <- as.data.frame(st_coordinates(dat_sf))
+names(crds) <- c("X", "Y")
+```
+
+## GRF Model
+
+
+```{r}
+f1<- mb_mwea ~ t2m_d + tp_d + 
+  z_med + z_slope + z_aspct + 
+  area_m2 + tau
+```
+
+```{r}
+mb_grf <- grf(f1,
+               dframe = st_drop_geometry(dat_sf),
+               coords = crds, 
+               kernel = "adaptive", bw = 100,
+               importance = TRUE,
+               forests = FALSE)
+```
+
+## Model output
+
+```{r}
+summary(mb_grf)
+```
+
+### Goodness-of-fit
+
+```{r}
+lgof <- mb_grf$LGofFit
+dat_sf$locR2 <- lgof$LM_Rsq100
+dat_sf$res <- lgof$LM_ResPred
+
+m1 <- tm_shape(dat_sf) +
+  tm_symbols(col = "locR2", size = 0.25, alpha = 0.75, style = "quantile")
+
+m2 <- tm_shape(dat_sf) +
+  tm_symbols(col = "res", size = 0.25, alpha = 0.75, style = "quantile")
+
+tmap_arrange(m1, m2)
+```
+
+### Variable importance
+```{r}
+vimp <- mb_grf$Local.Pc.IncMSE
+```
+
+```{r}
+dat_sf$vi_t2m_d <- vimp$t2m_d
+dat_sf$vi_t2m_d <- ifelse(dat_sf$vi_t2m_d < 0, 0, dat_sf$vi_t2m_d)
+```
+
+```{r}
+dat_sf$vi_tp_d <- vimp$tp_d
+dat_sf$vi_tp_d <- ifelse(dat_sf$vi_tp_d < 0, 0, dat_sf$vi_tp_d)
+```
+
+```{r}
+dat_sf$vi_z_med <- vimp$z_med
+dat_sf$vi_z_med <- ifelse(dat_sf$vi_z_med < 0, 0, dat_sf$vi_z_med)
+```
+
+```{r}
+dat_sf$vi_tau <- vimp$tau
+dat_sf$vi_tau <- ifelse(dat_sf$vi_tau < 0, 0, dat_sf$vi_tau)
+```
+
+```{r}
+m1 <- tm_shape(dat_sf) +
+  tm_symbols(col = "vi_t2m_d", size = 0.25, alpha = 0.75, style = "quantile")
+
+m2 <- tm_shape(dat_sf) +
+  tm_symbols(col = "vi_tp_d", size = 0.25, alpha = 0.75, style = "quantile")
+
+m3 <- tm_shape(dat_sf) +
+  tm_symbols(col = "vi_z_med", size = 0.25, alpha = 0.75, style = "quantile")
+
+m4 <- tm_shape(dat_sf) +
+  tm_symbols(col = "vi_tau", size = 0.25, alpha = 0.75, style = "quantile")
+
+tmap_arrange(m1, m2, m3, m4)
+```
+
