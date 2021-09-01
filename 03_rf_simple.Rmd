@@ -1,0 +1,92 @@
+---
+title: "02 Random Forest"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries and what not
+
+```{r message=FALSE}
+## Base RF model
+set.seed(42)
+
+library(ggplot2)  # for autoplot() generic
+library(dplyr)
+library(sf)
+library(ranger)
+library(vip)
+library(pdp)
+library(iml)
+```
+
+## Data processing
+
+```{r}
+dat_sf <- st_read("./data/glacier_clim.shp")
+dat <- dat_sf %>%
+  st_drop_geometry()
+
+dat <- dat %>% 
+  dplyr::select(mb_mwea, area_km2, z_med, z_aspct, z_slope,
+                tau, t2m_d, tp_d)
+
+dat2 <- dat[sample(1:nrow(dat), 5000), ]
+```
+
+## Build model
+
+```{r}
+f1 <- mb_mwea ~ t2m_d + tp_d + area_km2 + tau +
+  z_med + z_slope + z_aspct
+mb_rf <- ranger(f1, dat2, 
+                importance = "permutation")
+```
+
+## Variable importance
+
+```{r}
+vip(mb_rf)
+```
+
+## Partial dependency
+
+```{r}
+pred_wrapper <- function(object, newdata) {
+  # p <- predict(object, data = newdata)$predictions[, 1L, drop = TRUE]
+  p <- predict(object, data = newdata)$predictions
+  #c("avg" = mean(p), "avg-1sd" = mean(p) - sd(p), "avg+1sd" = mean(p) + sd(p))
+  c("avg" = mean(p))
+}
+
+pd1 <- partial(mb_rf, "t2m_d", 
+               train = dat2, 
+               pred.fun = pred_wrapper, grid.resolution = 30)
+pd2 <- partial(mb_rf, "tp_d", 
+               train = dat2, 
+               pred.fun = pred_wrapper, grid.resolution = 30)
+
+pdp1 <- autoplot(pd1) + 
+  theme_light() +
+  labs(x = "dT2M", y = "Partial dependence") +
+  theme(legend.position = "none")
+pdp2 <- autoplot(pd2) + 
+  theme_light() +
+  labs(x = "dP", y = "Partial dependence") +
+  theme(legend.position = "none")
+grid.arrange(pdp1, pdp2, nrow = 1)  # display plots side by side
+
+pdp3 <- partial(mb_rf, pred.var = c("t2m_d", "tau"),
+                chull = TRUE, grid.resolution = 30,
+                pred.fun = pred_wrapper, train = dat2) %>%
+  autoplot()
+print(pdp3)  # display plot
+
+pdp4 <- partial(mb_rf, pred.var = c("t2m_d", "z_med"),
+                chull = TRUE, grid.resolution = 30,
+                pred.fun = pred_wrapper, train = dat2) %>%
+  autoplot()
+print(pdp4)  # display plot
+```
