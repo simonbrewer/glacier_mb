@@ -22,7 +22,7 @@ library(tmap)
 
 ## Data processing
 
-```{r}
+```{r message=FALSE}
 dat_sf <- st_read("./data/glacier_clim.shp")
 dat_sf <- dat_sf[sample(1:nrow(dat_sf), 5000), ]
 
@@ -43,7 +43,7 @@ dat <- dat %>%
          tau = scale(tau),
          t2m_d = scale(t2m_d),
          tp_d = scale(tp_d)
-         )
+  )
 ```
 
 ### INLA spatial graph
@@ -53,7 +53,7 @@ dat$idarea <- 1:nrow(dat)
 
 # crds <- st_coordinates(dat)
 coo <- cbind(dat$east / 1000,
-           dat$north / 1000)
+             dat$north / 1000)
 
 nb <- graph2nb(gabrielneigh(coo), sym = TRUE)
 
@@ -63,11 +63,18 @@ g <- inla.read.graph("map.adj")
 
 ## INLA model
 
+Priors
+
+```{r}
+prior_bym <- list(prec.unstruct=list(prior='pc.prec',param=c(1, 0.025)),
+                  prec.spatial=list(prior='pc.prec', param=c(1, 0.025)))
+```
+
 ```{r}
 f1 <- mb_mwea ~ t2m_d + tp_d + 
   z_med + z_slope + z_aspct + 
   tau + area_km2 +
-  f(idarea, model = "bym2", graph = g)
+  f(idarea, model = "bym", graph = g, hyper = prior_bym)
 
 system.time(
   res1 <- inla(f1, data = dat,
@@ -99,18 +106,18 @@ ggplot(plot_df, aes(x = obs, y = pred)) +
 
 ### Map spatial effect
 
-```{r}
+```{r message = FALSE}
 spatial_re <- res1$summary.random$idarea
 dat_sf$re <- spatial_re$mean[1:nrow(dat_sf)]
 m1 <- tm_shape(dat_sf) +
-  tm_symbols(col = "re", size = 0.25, alpha = 0.5) 
+  tm_symbols(col = "re", size = 0.25, alpha = 0.75, style = "quantile") 
 print(m1)
 ```
 
-```{r}
+```{r message = FALSE}
 dat_sf$yhat <- plot_df$pred
 m2 <- tm_shape(dat_sf) +
-  tm_symbols(col = "yhat", size = 0.25, alpha = 0.5) 
+  tm_symbols(col = "yhat", size = 0.25, alpha = 0.75, style = "quantile") 
 print(m2)
 ```
 
@@ -119,8 +126,8 @@ print(m2)
 ## INLA model
 
 ```{r}
-f2 <- mb_mwea ~ t2m_d + z_med * tp_d + 
-  z_slope + z_aspct + 
+f2 <- mb_mwea ~ t2m_d * t2m_18 + tp_d + 
+  z_slope + z_aspct + z_med + 
   tau + area_km2 +
   f(idarea, model = "bym2", graph = g)
 
