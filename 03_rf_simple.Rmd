@@ -31,9 +31,9 @@ dat <- dat_sf %>%
 
 dat <- dat %>% 
   dplyr::select(mb_mwea, area_km2, z_med, z_aspct, z_slope,
-                tau, t2m_d, tp_d)
+                tau, t2m_d, t2m_18, tp_d, tp_18)
 
-dat2 <- dat[sample(1:nrow(dat), 5000), ]
+dat2 <- dat[sample(1:nrow(dat), 10000), ]
 ```
 
 ## Build model
@@ -77,13 +77,17 @@ pdp2 <- autoplot(pd2) +
   labs(x = "dP", y = "Partial dependence") +
   theme(legend.position = "none")
 grid.arrange(pdp1, pdp2, nrow = 1)  # display plots side by side
+```
 
-pdp3 <- partial(mb_rf, pred.var = c("t2m_d", "tau"),
+```{r}
+pdp3 <- partial(mb_rf, pred.var = c("t2m_d", "t2m_18"),
                 chull = TRUE, grid.resolution = 30,
                 pred.fun = pred_wrapper, train = dat2) %>%
   autoplot()
 print(pdp3)  # display plot
+```
 
+```{r}
 pdp4 <- partial(mb_rf, pred.var = c("t2m_d", "z_med"),
                 chull = TRUE, grid.resolution = 30,
                 pred.fun = pred_wrapper, train = dat2) %>%
