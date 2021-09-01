@@ -25,22 +25,23 @@ library(iml)
 ## Data processing
 
 ```{r}
-dat_sf <- st_read("../data/glacier_clim.shp")
+dat_sf <- st_read("./data/glacier_clim.shp")
 dat <- dat_sf %>%
   st_drop_geometry()
 
 dat <- dat %>% 
-  dplyr::select(mb_mwea, area_km2, z_min, z_med, z_max, z_aspct, z_slope,
-                tau,
-                t2m_18, t2m_d, tp_18, tp_d)
+  dplyr::select(mb_mwea, area_km2, z_med, z_aspct, z_slope,
+                tau, t2m_d, tp_d)
 
-dat2 <- dat[sample(1:nrow(dat), 500), ]
+dat2 <- dat[sample(1:nrow(dat), 5000), ]
 ```
 
 ## Build model
 
 ```{r}
-mb_rf <- ranger(mb_mwea ~ ., dat2, 
+f1 <- mb_mwea ~ t2m_d + tp_d + area_km2 + tau +
+  z_med + z_slope + z_aspct
+mb_rf <- ranger(f1, dat2, 
                 importance = "permutation")
 ```
 
@@ -118,25 +119,25 @@ plot(imp)
 Calculate individual feature effects (PDs)  and plot them using a not at all controversial plotting method:
 
 ```{r}
-effect <- FeatureEffects$new(mod, 
-                             grid.size = 30, 
-                             method = "pdp")
-plot(effect)
+# effect <- FeatureEffects$new(mod, 
+#                              grid.size = 30, 
+#                              method = "pdp")
+# plot(effect)
 ```
 
 In the `results` part of this object are the individual PD values. We can then get their SD values for the effect size:
 
 ```{r}
-eff_size <- as.data.frame(lapply(effect$results, function(x) sd(x$.value)))
-knitr::kable(eff_size)
+# eff_size <- as.data.frame(lapply(effect$results, function(x) sd(x$.value)))
+# knitr::kable(eff_size)
 ```
 
 #### Effect size by level
 
 ```{r}
-effect <- FeatureEffect$new(mod, c("t2m_d", "z_med"),
-                            method = "pdp")
-plot(effect)
+# effect <- FeatureEffect$new(mod, c("t2m_d", "z_med"),
+#                             method = "pdp")
+# plot(effect)
 ```
 
 ### Interactions
