@@ -39,7 +39,8 @@ dat2 <- dat[sample(1:nrow(dat), 10000), ]
 ## Build model
 
 ```{r}
-f1 <- mb_mwea ~ t2m_d + tp_d + area_km2 + tau +
+f1 <- mb_mwea ~ t2m_d + t2m_18 + tp_d + tp_18 + 
+  area_km2 + tau +
   z_med + z_slope + z_aspct
 mb_rf <- ranger(f1, dat2, 
                 importance = "permutation")
