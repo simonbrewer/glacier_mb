@@ -23,8 +23,8 @@ output:
 - [Geographical random forest][grf]
 
 [inla1]: https://simonbrewer.github.io/glacier_mb/mb_INLA.html
-[gwr]: https://simonbrewer.github.io/grumpyoldgit/gog_part2.html
-[rf_simple]: https://simonbrewer.github.io/grumpyoldgit/gog_part3.html
-[grf]: https://simonbrewer.github.io/grumpyoldgit/gog_part3.html
+[gwr]: https://simonbrewer.github.io/glacier_mb/mb_gwr.html
+[rf_simple]: https://simonbrewer.github.io/glacier_mb/mb_rf_simple.html
+[grf]: https://simonbrewer.github.io/glacier_mb/mb_grf.html
 
 
