@@ -45,8 +45,7 @@ dat <- dat_sf %>%
                 east, north, tau,
                 t2m_18, t2m_d, tp_18, tp_d)
 ```
-
-Scaling
+## Scaling
 
 ```{r}
 dat <- dat %>%
