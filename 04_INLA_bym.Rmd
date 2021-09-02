@@ -37,7 +37,7 @@ library(tmap)
 
 ```{r message=FALSE}
 dat_sf <- st_read("./data/glacier_clim.shp")
-dat_sf <- dat_sf[sample(1:nrow(dat_sf), 5000), ]
+# dat_sf <- dat_sf[sample(1:nrow(dat_sf), 5000), ]
 
 dat <- dat_sf %>%
   st_drop_geometry() %>% 
