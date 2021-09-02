@@ -1,13 +1,26 @@
 ---
 title: "05 GWR"
-output: html_document
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'mb_gwr.html'))})
+author: "Simon Brewer"
+date: "09/01/2021"
+output:
+  html_document:
+    theme: flatly
+    df_print: paged
+    number_sections: true
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Libraries and what not
+# Libraries and what not
 
 ```{r message=FALSE}
 set.seed(42)
@@ -19,7 +32,7 @@ library(spgwr) ## Maybe change to GWmodel for parallel proc.
 library(tmap)
 ```
 
-## Data processing
+# Data processing
 
 ```{r}
 dat_sf <- st_read("./data/glacier_clim.shp")
@@ -27,7 +40,7 @@ dat_sf <- dat_sf[sample(1:nrow(dat_sf), 5000), ]
 dat_sp <- as_Spatial(dat_sf)
 ```
 
-## GWR model
+# GWR model
 
 Model formula
 
@@ -53,29 +66,29 @@ mb_gwr <- gwr(f1, dat_sp, adapt = bw)
 summary(mb_gwr)
 ```
 
-## Output
+# Output
 
 ```{r}
 tm_shape(mb_gwr$SDF) +
-  tm_symbols(col = "localR2", size = 0.25, alpha = 0.5)
+  tm_symbols(col = "localR2", size = 0.25, alpha = 0.75, style = "quantile")
 ```
 
 ```{r}
 tm_shape(mb_gwr$SDF) +
-  tm_symbols(col = "t2m_d", size = 0.25, alpha = 0.5)
+  tm_symbols(col = "t2m_d", size = 0.25, alpha = 0.75, style = "quantile")
 ```
 
 ```{r}
 tm_shape(mb_gwr$SDF) +
-  tm_symbols(col = "tp_d", size = 0.25, alpha = 0.5)
+  tm_symbols(col = "tp_d", size = 0.25, alpha = 0.75, style = "quantile")
 ```
 
 ```{r}
 tm_shape(mb_gwr$SDF) +
-  tm_symbols(col = "z_med", size = 0.25, alpha = 0.5)
+  tm_symbols(col = "z_med", size = 0.25, alpha = 0.75, style = "quantile")
 ```
 
 ```{r}
 tm_shape(mb_gwr$SDF) +
-  tm_symbols(col = "tau", size = 0.25, alpha = 0.5)
+  tm_symbols(col = "tau", size = 0.25, alpha = 0.75, style = "quantile")
 ```
