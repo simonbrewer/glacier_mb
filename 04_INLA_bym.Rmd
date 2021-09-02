@@ -1,13 +1,26 @@
 ---
 title: "04 INLA BYM"
-output: html_document
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'mb_INLA.html'))})
+author: "Simon Brewer"
+date: "09/01/2021"
+output:
+  html_document:
+    theme: flatly
+    df_print: paged
+    number_sections: true
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Libraries and what not
+# Libraries and what not
 
 ```{r message=FALSE}
 set.seed(42)
@@ -20,7 +33,7 @@ library(INLAutils)
 library(tmap)
 ```
 
-## Data processing
+# Data processing
 
 ```{r message=FALSE}
 dat_sf <- st_read("./data/glacier_clim.shp")
@@ -34,6 +47,7 @@ dat <- dat_sf %>%
 ```
 
 Scaling
+
 ```{r}
 dat <- dat %>%
   mutate(area_km2 = scale(area_km2),
@@ -46,7 +60,7 @@ dat <- dat %>%
   )
 ```
 
-### INLA spatial graph
+## INLA spatial graph
 
 ```{r}
 dat$idarea <- 1:nrow(dat)
@@ -61,7 +75,7 @@ nb2INLA("map.adj", nb)
 g <- inla.read.graph("map.adj")
 ```
 
-## INLA model
+# INLA model
 
 Priors
 
@@ -83,7 +97,7 @@ system.time(
 )
 ```
 
-### Model output
+## Model output
 
 ```{r}
 summary(res1)
@@ -95,7 +109,7 @@ plot_hyper_marginals(res1)
 ```
 
 
-### Obs vs pred
+## Obs vs pred
 
 ```{r}
 plot_df <- data.frame(obs = dat$mb_mwea,
@@ -104,7 +118,7 @@ ggplot(plot_df, aes(x = obs, y = pred)) +
   geom_point()
 ```
 
-### Map spatial effect
+## Map spatial effect
 
 ```{r message = FALSE}
 spatial_re <- res1$summary.random$idarea
@@ -121,15 +135,13 @@ m2 <- tm_shape(dat_sf) +
 print(m2)
 ```
 
-## Interaction example
-
-## INLA model
+# Interaction example
 
 ```{r}
 f2 <- mb_mwea ~ t2m_d * t2m_18 + tp_d + 
   z_slope + z_aspct + z_med + 
   tau + area_km2 +
-  f(idarea, model = "bym2", graph = g)
+  f(idarea, model = "bym", graph = g, hyper = prior_bym)
 
 system.time(
   res2 <- inla(f2, data = dat,
@@ -138,7 +150,7 @@ system.time(
 )
 ```
 
-### Model output
+## Model output
 
 ```{r}
 summary(res2)
