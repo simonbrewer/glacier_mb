@@ -1,13 +1,26 @@
 ---
 title: "06 Geographical Random Forest"
-output: html_document
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'mb_grf.html'))})
+author: "Simon Brewer"
+date: "09/01/2021"
+output:
+  html_document:
+    theme: flatly
+    df_print: paged
+    number_sections: true
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
 ```
 
-## Libraries and what not
+# Libraries and what not
 
 ```{r message=FALSE}
 set.seed(42)
@@ -19,7 +32,7 @@ library(SpatialML)
 library(tmap)
 ```
 
-## Data processing
+# Data processing
 
 ```{r}
 dat_sf <- st_read("./data/glacier_clim.shp")
@@ -29,31 +42,34 @@ crds <- as.data.frame(st_coordinates(dat_sf))
 names(crds) <- c("X", "Y")
 ```
 
-## GRF Model
-
+# GRF Model
 
 ```{r}
-f1<- mb_mwea ~ t2m_d + tp_d + 
+source("grf2.R")
+
+dat <- st_drop_geometry(dat_sf)
+
+f1 <- mb_mwea ~ t2m_d + tp_d + 
   z_med + z_slope + z_aspct + 
   area_m2 + tau
+
+mb_grf <- grf2(mb_mwea ~ t2m_d + tp_d + 
+                z_med + z_slope + z_aspct + 
+                area_m2 + tau,
+              dframe = dat,
+              coords = crds, 
+              kernel = "adaptive", bw = 100,
+              importance = TRUE,
+              forests = FALSE)
 ```
 
-```{r}
-mb_grf <- grf(f1,
-               dframe = st_drop_geometry(dat_sf),
-               coords = crds, 
-               kernel = "adaptive", bw = 100,
-               importance = TRUE,
-               forests = FALSE)
-```
-
-## Model output
+# Model output
 
 ```{r}
 summary(mb_grf)
 ```
 
-### Goodness-of-fit
+## Goodness-of-fit
 
 ```{r}
 lgof <- mb_grf$LGofFit
@@ -69,7 +85,8 @@ m2 <- tm_shape(dat_sf) +
 tmap_arrange(m1, m2)
 ```
 
-### Variable importance
+## Variable importance
+
 ```{r}
 vimp <- mb_grf$Local.Pc.IncMSE
 ```
