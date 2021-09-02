@@ -1,0 +1,30 @@
+---
+title: 'Glacier Mass Balance Models'
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+author: "Simon Brewer"
+date: "01/11/2021"
+output:
+  html_document:
+    theme: flatly
+    df_print: paged
+    number_sections: true
+    toc: false
+    toc_float: false
+---
+
+
+- [INLA BYM model][inla1]
+- [Geographically weighted regression][gwr]
+- [Random forest][rf_simple]
+- [Geographical random forest][grf]
+
+[inla1]: https://simonbrewer.github.io/glacier_mb/mb_INLA.html
+[gwr]: https://simonbrewer.github.io/grumpyoldgit/gog_part2.html
+[rf_simple]: https://simonbrewer.github.io/grumpyoldgit/gog_part3.html
+[grf]: https://simonbrewer.github.io/grumpyoldgit/gog_part3.html
+
+
