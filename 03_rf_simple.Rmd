@@ -1,5 +1,5 @@
 ---
-title: "02 Random Forest"
+title: "03 Random Forest"
 knit: (function(input_file, encoding) {
   out_dir <- 'docs';
   rmarkdown::render(input_file,
