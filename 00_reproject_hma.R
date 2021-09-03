@@ -1,7 +1,8 @@
+## Needs updating to sf
 library(sp)
 library(rgdal)
 
-crds <- read.csv("./data/HMA_glacier_mass-balance.xlsx - hma_mb_20190214_1015_nmad.csv", 
+crds <- read.csv("./data/HMA_glacier_mass-balance_090221.csv", 
                  na.strings = "nan")
 
 x <- crds$x
