@@ -71,7 +71,7 @@ dat_cor <- cor(dat)
 ggcorrplot(dat_cor)
 ```
 
-Variance inflation factors ($>5$ is a conservative threshold for multicollinearity). The high value for the seasonality is probably from the correlation with general precipitation values.
+Variance inflation factors ($>5$ is a conservative threshold for multicollinearity). 
 
 ```{r}
 fit <- lm(mb_mwea ~ ., dat)
