@@ -31,6 +31,7 @@ library(dplyr)
 library(ggpubr)
 library(ggcorrplot)
 library(sf)
+library(stars)
 library(tmap)
 library(car)
 ```
@@ -41,11 +42,25 @@ library(car)
 dat_sf <- st_read("./data/glacier_clim.shp")
 ```
 
+```{r}
+my_vars <- c("mb_mwea", "area_km2", "z_med", "hi", "z_aspct", "z_slope", "tau",
+             "t2m_18", "t2m_d", "tp_18", "tp_d", "tpseas_18", "tpseas_d")
+my_labels <- c("Mass balance", "Area (km2)", "Median elevation", "Hypsometry",
+               "Aspect", "Slope", "tau", 
+               "2m temperature (2018)",
+               "2m temperature change (2018 - 2008)",
+               "Annual precipitation (2018)",
+               "Annual precipitation change (2018 - 2008)",
+               "Precipitation seasonality (2018)",
+               "Precipitation seasonality change (2018 - 2008)"
+)
+n_vars <- length(my_vars)
+```
+
+
 # Correlation matrix
 
 ```{r}
-my_vars <- c("mb_mwea", "area_km2", "z_med", "hi", "z_aspct", "z_slope", "tau",
-             "t2m_18", "t2m_d", "tp_18", "tp_d", "tpjja_18")
 dat <- dat_sf %>%
   st_drop_geometry() %>% 
   dplyr::select(any_of(my_vars))
@@ -66,8 +81,8 @@ vif(fit)
 # Histograms
 
 ```{r message=FALSE, warning=FALSE}
-for(i in my_vars) {
-  p1 <- gghistogram(dat, i)
+for(i in 1:n_vars) {
+  p1 <- gghistogram(dat, my_vars[i], main = my_labels[i])
   print(p1)
 }
 ```
@@ -78,7 +93,6 @@ Possible variables for log-transform:
 - `z_slope`
 - `tau`
 - `tp_18`
-- `tpjja_18`
 
 ## Log-transform
 
@@ -106,21 +120,31 @@ p1 <- gghistogram(dat, "ltp_18")
 print(p1)
 ```
 
-```{r message=FALSE, warning=FALSE}
-dat$ltpjja_18 <- log(dat$tpjja_18)
-p1 <- gghistogram(dat, "ltpjja_18")
-print(p1)
-```
-
 # Maps
 
+Load basemap
+
+```{r}
+basemap <- read_stars("~/Dropbox/Data/summer/natural_earth/HYP_50M_SR_W/HYP_50M_SR_W.tif")
+
+basemap2 <- st_crop(basemap, st_bbox(dat_sf))
+basemap2 <- st_rgb(basemap2)
+```
+
 ```{r message=FALSE, warning=FALSE}
-for(i in my_vars) {
-  m1 <- tm_shape(dat_sf) +
-    tm_symbols(col = i, 
-               size = 0.25, 
-               alpha = 0.75, 
-               style = "quantile")
+for(i in 1:n_vars) {
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(dat_sf) +
+  tm_symbols(col = my_vars[i], 
+             size = 0.25, 
+             alpha = 0.75, 
+             style = "quantile") +
+  tm_layout(main.title = my_labels[i], 
+            legend.position = c("left", "bottom"),
+            legend.bg.color = "white",
+            legend.bg.alpha = 0.5)
+
   print(m1)
 }
 ```
