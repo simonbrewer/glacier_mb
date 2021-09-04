@@ -114,4 +114,14 @@ print(p1)
 
 # Maps
 
+```{r message=FALSE, warning=FALSE}
+for(i in my_vars) {
+  m1 <- tm_shape(dat_sf) +
+    tm_symbols(col = i, 
+               size = 0.25, 
+               alpha = 0.75, 
+               style = "quantile")
+  print(m1)
+}
+```
 
