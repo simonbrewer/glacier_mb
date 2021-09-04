@@ -1,0 +1,117 @@
+---
+title: "02 Data exploration"
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'mb_viz.html'))})
+author: "Simon Brewer"
+date: "09/07/2021"
+output:
+  html_document:
+    theme: flatly
+    df_print: paged
+    number_sections: true
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries and what not
+
+```{r message=FALSE}
+## Base RF model
+set.seed(42)
+
+library(ggplot2)  # for autoplot() generic
+library(dplyr)
+library(ggpubr)
+library(ggcorrplot)
+library(sf)
+library(tmap)
+library(car)
+```
+
+# Data processing
+
+```{r}
+dat_sf <- st_read("./data/glacier_clim.shp")
+```
+
+# Correlation matrix
+
+```{r}
+my_vars <- c("mb_mwea", "area_km2", "z_med", "hi", "z_aspct", "z_slope", "tau",
+             "t2m_18", "t2m_d", "tp_18", "tp_d", "tpjja_18")
+dat <- dat_sf %>%
+  st_drop_geometry() %>% 
+  dplyr::select(any_of(my_vars))
+dat_cor <- cor(dat)
+```
+
+```{r}
+ggcorrplot(dat_cor)
+```
+
+Variance inflation factors ($>5$ is a conservative threshold for multicollinearity). The high value for the seasonality is probably from the correlation with general precipitation values.
+
+```{r}
+fit <- lm(mb_mwea ~ ., dat)
+vif(fit)
+```
+
+# Histograms
+
+```{r message=FALSE, warning=FALSE}
+for(i in my_vars) {
+  p1 <- gghistogram(dat, i)
+  print(p1)
+}
+```
+
+Possible variables for log-transform:
+
+- `area_km2`
+- `z_slope`
+- `tau`
+- `tp_18`
+- `tpjja_18`
+
+## Log-transform
+
+```{r message=FALSE, warning=FALSE}
+dat$larea_km2 <- log(dat$area_km2)
+p1 <- gghistogram(dat, "larea_km2")
+print(p1)
+```
+
+```{r message=FALSE, warning=FALSE}
+dat$lz_slope <- log(dat$z_slope)
+p1 <- gghistogram(dat, "lz_slope")
+print(p1)
+```
+
+```{r message=FALSE, warning=FALSE}
+dat$ltau <- log(dat$tau)
+p1 <- gghistogram(dat, "ltau")
+print(p1)
+```
+
+```{r message=FALSE, warning=FALSE}
+dat$ltp_18 <- log(dat$tp_18)
+p1 <- gghistogram(dat, "ltp_18")
+print(p1)
+```
+
+```{r message=FALSE, warning=FALSE}
+dat$ltpjja_18 <- log(dat$tpjja_18)
+p1 <- gghistogram(dat, "ltpjja_18")
+print(p1)
+```
+
+# Maps
+
+
