@@ -42,3 +42,8 @@ glac_sf$area_km2 <- glac_sf$area_m2 / 1e6
 
 st_write(glac_sf, "./data/glacier_clim.shp", append = FALSE)
 
+glac_sf$z_aspct_sin <- sin(glac_sf$z_aspct * pi / 180)
+glac_sf$z_aspct_cos <- cos(glac_sf$z_aspct * pi / 180)
+glac_sf$z_aspct_dev <- (abs(glac_sf$z_aspct - 180) * -1) + 180
+
+cor(glac_sf$z_aspct_dev, glac_sf$mb_mwea)
