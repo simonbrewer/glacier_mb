@@ -43,8 +43,9 @@ dat <- dat_sf %>%
   st_drop_geometry() %>% 
   dplyr::select(mb_mwea, area_km2, z_min, z_med, z_max, z_aspct, z_slope,
                 east, north, tau,
-                t2m_18, t2m_d, tp_18, tp_d, tpseas_18, tpseas_d) %>%
-  sample_n(5000)
+                t2m_18, t2m_d, tp_18, tp_d, tpseas_18, tpseas_d) 
+# %>%
+#   sample_n(5000)
 ```
 ## Scaling
 
@@ -134,24 +135,24 @@ ggplot(plot_df, aes(x = obs, y = pred)) +
 ## Map spatial effect
 
 ```{r message = FALSE}
-spatial_re <- res1$summary.random$idarea
-dat_sf$re <- spatial_re$mean[1:nrow(dat_sf)]
-m1 <- tm_shape(dat_sf) +
-  tm_symbols(col = "re", size = 0.25, alpha = 0.75, style = "quantile") 
-print(m1)
+# spatial_re <- res1$summary.random$idarea
+# dat_sf$re <- spatial_re$mean[1:nrow(dat_sf)]
+# m1 <- tm_shape(dat_sf) +
+#   tm_symbols(col = "re", size = 0.25, alpha = 0.75, style = "quantile") 
+# print(m1)
 ```
 
 ```{r message = FALSE}
-dat_sf$yhat <- plot_df$pred
-m2 <- tm_shape(dat_sf) +
-  tm_symbols(col = "yhat", size = 0.25, alpha = 0.75, style = "quantile") 
-print(m2)
+# dat_sf$yhat <- plot_df$pred
+# m2 <- tm_shape(dat_sf) +
+#   tm_symbols(col = "yhat", size = 0.25, alpha = 0.75, style = "quantile") 
+# print(m2)
 ```
 
-# Interaction example
+# No interactions
 
 ```{r}
-f2 <- mb_mwea ~ t2m_d * t2m_18 + tp_d + 
+f2 <- mb_mwea ~ t2m_d + t2m_18 + tp_d + 
   z_slope + z_aspct + z_med + 
   tau + area_km2 +
   f(idarea, model = "bym", graph = g, hyper = prior_bym)
