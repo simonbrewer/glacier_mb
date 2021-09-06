@@ -1,12 +1,12 @@
 ---
-title: "04 INLA BYM"
+title: "05 INLA BYM"
 knit: (function(input_file, encoding) {
   out_dir <- 'docs';
   rmarkdown::render(input_file,
  encoding=encoding,
  output_file=file.path(dirname(input_file), out_dir, 'mb_INLA.html'))})
 author: "Simon Brewer"
-date: "09/01/2021"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     theme: flatly
@@ -43,7 +43,8 @@ dat <- dat_sf %>%
   st_drop_geometry() %>% 
   dplyr::select(mb_mwea, area_km2, z_min, z_med, z_max, z_aspct, z_slope,
                 east, north, tau,
-                t2m_18, t2m_d, tp_18, tp_d)
+                t2m_18, t2m_d, tp_18, tp_d, tpseas_18, tpseas_d) %>%
+  sample_n(5000)
 ```
 ## Scaling
 
@@ -54,8 +55,12 @@ dat <- dat %>%
          z_aspct = scale(z_aspct),
          z_slope = scale(z_slope),
          tau = scale(tau),
+         t2m_18 = scale(t2m_18),
+         tp_18 = scale(tp_18),
          t2m_d = scale(t2m_d),
-         tp_d = scale(tp_d)
+         tp_d = scale(tp_d),
+         tpseas_18 = scale(tpseas_18),
+         tpseas_d = scale(tpseas_d)
   )
 ```
 
@@ -81,13 +86,22 @@ Priors
 ```{r}
 prior_bym <- list(prec.unstruct=list(prior='pc.prec',param=c(1, 0.025)),
                   prec.spatial=list(prior='pc.prec', param=c(1, 0.025)))
+
+prior_bym2 <- list(
+  prec = list(
+    prior = "pc.prec",
+    param = c(0.01 / 0.31, 0.01)),
+  phi = list(
+    prior = "pc",
+    param = c(0.5, 2 / 3))
+)
 ```
 
 ```{r}
-f1 <- mb_mwea ~ t2m_d + tp_d + 
-  z_med + z_slope + z_aspct + 
-  tau + area_km2 +
-  f(idarea, model = "bym", graph = g, hyper = prior_bym)
+f1 <- mb_mwea ~ t2m_d * t2m_18 + t2m_d * tp_18 + tp_d + 
+  tpseas_18 + tpseas_d +
+  tau * z_med + z_slope + z_aspct + area_km2 +
+  f(idarea, model = "bym2", graph = g, hyper = prior_bym2)
 
 system.time(
   res1 <- inla(f1, data = dat,
