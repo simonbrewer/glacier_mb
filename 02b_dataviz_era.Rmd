@@ -1,0 +1,193 @@
+---
+title: "02b ERA5 Data"
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'mb_viz.html'))})
+author: "Simon Brewer"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    theme: flatly
+    df_print: paged
+    number_sections: true
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries and what not
+
+```{r message=FALSE}
+## Base RF model
+set.seed(42)
+
+library(ggplot2)  # for autoplot() generic
+library(dplyr)
+library(sf)
+library(stars)
+library(tmap)
+```
+
+# Data preprocessing
+
+## Glaciers
+
+```{r}
+dat_sf <- st_read("./data/glacier_clim.shp")
+```
+
+
+## Basemap
+
+Load and crop basemap
+
+```{r}
+basemap <- read_stars("~/Dropbox/Data/summer/natural_earth/HYP_50M_SR_W/HYP_50M_SR_W.tif")
+
+basemap2 <- st_crop(basemap, st_bbox(dat_sf))
+basemap2 <- st_rgb(basemap2)
+```
+
+# ERA Data
+
+## `t2m`
+
+```{r}
+t2m <- read_stars("~/Dropbox/Data/summer/era5/t2m_2001_2020_ann.nc")
+st_crs(t2m) <- 4326
+t2m <- st_crop(t2m, st_bbox(dat_sf))
+```
+
+```{r}
+by_t = as.POSIXct(c("2006-06-16", "2010-06-16"))
+t2m_2008 <- aggregate(t2m, by = by_t, FUN = mean)
+```
+
+## `tp`
+
+```{r}
+tp <- read_stars("~/Dropbox/Data/summer/era5/tp_2001_2020_ann.nc")
+st_crs(tp) <- 4326
+tp <- st_crop(tp, st_bbox(dat_sf))
+```
+
+
+
+# Data processing
+
+```{r}
+dat_sf <- st_read("./data/glacier_clim.shp")
+```
+
+```{r}
+my_vars <- c("mb_mwea", "area_km2", "z_med", "hi", "z_aspct", "z_slope", "tau",
+             "t2m_18", "t2m_d", "tp_18", "tp_d", "tpseas_18", "tpseas_d")
+my_labels <- c("Mass balance", "Area (km2)", "Median elevation", "Hypsometry",
+               "Aspect", "Slope", "tau", 
+               "2m temperature (2018)",
+               "2m temperature change (2018 - 2008)",
+               "Annual precipitation (2018)",
+               "Annual precipitation change (2018 - 2008)",
+               "Precipitation seasonality (2018)",
+               "Precipitation seasonality change (2018 - 2008)"
+)
+n_vars <- length(my_vars)
+```
+
+
+# Correlation matrix
+
+```{r}
+dat <- dat_sf %>%
+  st_drop_geometry() %>% 
+  dplyr::select(any_of(my_vars))
+dat_cor <- cor(dat)
+```
+
+```{r}
+ggcorrplot(dat_cor)
+```
+
+Variance inflation factors ($>5$ is a conservative threshold for multicollinearity). 
+
+```{r}
+fit <- lm(mb_mwea ~ ., dat)
+vif(fit)
+```
+
+# Histograms
+
+```{r message=FALSE, warning=FALSE}
+for(i in 1:n_vars) {
+  p1 <- gghistogram(dat, my_vars[i], main = my_labels[i])
+  print(p1)
+}
+```
+
+Possible variables for log-transform:
+
+- `area_km2`
+- `z_slope`
+- `tau`
+- `tp_18`
+
+## Log-transform
+
+```{r message=FALSE, warning=FALSE}
+dat$larea_km2 <- log(dat$area_km2)
+p1 <- gghistogram(dat, "larea_km2")
+print(p1)
+```
+
+```{r message=FALSE, warning=FALSE}
+dat$lz_slope <- log(dat$z_slope)
+p1 <- gghistogram(dat, "lz_slope")
+print(p1)
+```
+
+```{r message=FALSE, warning=FALSE}
+dat$ltau <- log(dat$tau)
+p1 <- gghistogram(dat, "ltau")
+print(p1)
+```
+
+```{r message=FALSE, warning=FALSE}
+dat$ltp_18 <- log(dat$tp_18)
+p1 <- gghistogram(dat, "ltp_18")
+print(p1)
+```
+
+# Maps
+
+Load basemap
+
+```{r}
+basemap <- read_stars("~/Dropbox/Data/summer/natural_earth/HYP_50M_SR_W/HYP_50M_SR_W.tif")
+
+basemap2 <- st_crop(basemap, st_bbox(dat_sf))
+basemap2 <- st_rgb(basemap2)
+```
+
+```{r message=FALSE, warning=FALSE}
+for(i in 1:n_vars) {
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(dat_sf) +
+  tm_symbols(col = my_vars[i], 
+             size = 0.25, 
+             alpha = 0.75, 
+             style = "quantile") +
+  tm_layout(main.title = my_labels[i], 
+            legend.position = c("left", "bottom"),
+            legend.bg.color = "white",
+            legend.bg.alpha = 0.5)
+
+  print(m1)
+}
+```
+
