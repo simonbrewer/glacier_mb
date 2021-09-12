@@ -130,12 +130,29 @@ m1 <- tm_shape(basemap2) +
 print(m1)
 ```
 
+Plot $\delta$
+
 ```{r message=FALSE, warning=FALSE}
 m1 <- tm_shape(basemap2) +
   tm_raster(palette = "Greys", alpha = 0.5) +
   tm_shape(t2m_d) +
   tm_raster(alpha = 0.75, 
             style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
+
+Plot $\delta$ with mass balance
+
+```{r message=FALSE, warning=FALSE}
+m1 <- tm_shape(t2m_d) +
+  tm_raster(alpha = 0.75, 
+            style = "quantile") +
+  tm_shape(dat_sf) + 
+    tm_symbols(col = "mb_mwea", 
+             size = 0.25, 
+             alpha = 0.75, 
+             style = "quantile") +
   tm_layout(legend.outside = TRUE)
 print(m1)
 ```
@@ -155,6 +172,8 @@ m1 <- tm_shape(basemap2) +
 print(m1)
 ```
 
+Plot $\delta$
+
 ```{r message=FALSE, warning=FALSE}
 m1 <- tm_shape(basemap2) +
   tm_raster(palette = "Greys", alpha = 0.5) +
@@ -165,3 +184,17 @@ m1 <- tm_shape(basemap2) +
 print(m1)
 ```
 
+Plot $\delta$ with mass balance
+
+```{r message=FALSE, warning=FALSE}
+m1 <- tm_shape(tp_d) +
+  tm_raster(alpha = 0.75, 
+            style = "quantile") +
+  tm_shape(dat_sf) + 
+    tm_symbols(col = "mb_mwea", 
+             size = 0.25, 
+             alpha = 0.75, 
+             style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
