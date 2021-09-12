@@ -4,7 +4,7 @@ knit: (function(input_file, encoding) {
   out_dir <- 'docs';
   rmarkdown::render(input_file,
  encoding=encoding,
- output_file=file.path(dirname(input_file), out_dir, 'mb_viz.html'))})
+ output_file=file.path(dirname(input_file), out_dir, 'era5_viz.html'))})
 author: "Simon Brewer"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -61,11 +61,27 @@ basemap2 <- st_rgb(basemap2)
 t2m <- read_stars("~/Dropbox/Data/summer/era5/t2m_2001_2020_ann.nc")
 st_crs(t2m) <- 4326
 t2m <- st_crop(t2m, st_bbox(dat_sf))
+t2m <- st_as_stars(t2m)
 ```
 
+Make average 2006-2010
 ```{r}
-by_t = as.POSIXct(c("2006-06-16", "2010-06-16"))
-t2m_2008 <- aggregate(t2m, by = by_t, FUN = mean)
+t2m_2008 <- t2m %>% 
+  slice("time", 6:10) %>%
+  st_apply(MARGIN = 1:2, FUN = mean)
+```
+
+Make average 2016-2020
+```{r}
+t2m_2018 <- t2m %>% 
+  slice("time", 16:20) %>%
+  st_apply(MARGIN = 1:2, FUN = mean)
+```
+
+Make delta
+
+```{r}
+t2m_d <- t2m_2018 - t2m_2008
 ```
 
 ## `tp`
@@ -74,120 +90,78 @@ t2m_2008 <- aggregate(t2m, by = by_t, FUN = mean)
 tp <- read_stars("~/Dropbox/Data/summer/era5/tp_2001_2020_ann.nc")
 st_crs(tp) <- 4326
 tp <- st_crop(tp, st_bbox(dat_sf))
+tp <- st_as_stars(tp)
 ```
 
+Make average 2006-2010
+```{r}
+tp_2008 <- tp %>% 
+  slice("time", 6:10) %>%
+  st_apply(MARGIN = 1:2, FUN = mean)
+```
 
+Make average 2016-2020
+```{r}
+tp_2018 <- tp %>% 
+  slice("time", 16:20) %>%
+  st_apply(MARGIN = 1:2, FUN = mean)
+```
 
-# Data processing
+Make delta
 
 ```{r}
-dat_sf <- st_read("./data/glacier_clim.shp")
-```
-
-```{r}
-my_vars <- c("mb_mwea", "area_km2", "z_med", "hi", "z_aspct", "z_slope", "tau",
-             "t2m_18", "t2m_d", "tp_18", "tp_d", "tpseas_18", "tpseas_d")
-my_labels <- c("Mass balance", "Area (km2)", "Median elevation", "Hypsometry",
-               "Aspect", "Slope", "tau", 
-               "2m temperature (2018)",
-               "2m temperature change (2018 - 2008)",
-               "Annual precipitation (2018)",
-               "Annual precipitation change (2018 - 2008)",
-               "Precipitation seasonality (2018)",
-               "Precipitation seasonality change (2018 - 2008)"
-)
-n_vars <- length(my_vars)
-```
-
-
-# Correlation matrix
-
-```{r}
-dat <- dat_sf %>%
-  st_drop_geometry() %>% 
-  dplyr::select(any_of(my_vars))
-dat_cor <- cor(dat)
-```
-
-```{r}
-ggcorrplot(dat_cor)
-```
-
-Variance inflation factors ($>5$ is a conservative threshold for multicollinearity). 
-
-```{r}
-fit <- lm(mb_mwea ~ ., dat)
-vif(fit)
-```
-
-# Histograms
-
-```{r message=FALSE, warning=FALSE}
-for(i in 1:n_vars) {
-  p1 <- gghistogram(dat, my_vars[i], main = my_labels[i])
-  print(p1)
-}
-```
-
-Possible variables for log-transform:
-
-- `area_km2`
-- `z_slope`
-- `tau`
-- `tp_18`
-
-## Log-transform
-
-```{r message=FALSE, warning=FALSE}
-dat$larea_km2 <- log(dat$area_km2)
-p1 <- gghistogram(dat, "larea_km2")
-print(p1)
-```
-
-```{r message=FALSE, warning=FALSE}
-dat$lz_slope <- log(dat$z_slope)
-p1 <- gghistogram(dat, "lz_slope")
-print(p1)
-```
-
-```{r message=FALSE, warning=FALSE}
-dat$ltau <- log(dat$tau)
-p1 <- gghistogram(dat, "ltau")
-print(p1)
-```
-
-```{r message=FALSE, warning=FALSE}
-dat$ltp_18 <- log(dat$tp_18)
-p1 <- gghistogram(dat, "ltp_18")
-print(p1)
+tp_d <- tp_2018 - tp_2008
 ```
 
 # Maps
 
-Load basemap
+## `t2m`
 
-```{r}
-basemap <- read_stars("~/Dropbox/Data/summer/natural_earth/HYP_50M_SR_W/HYP_50M_SR_W.tif")
-
-basemap2 <- st_crop(basemap, st_bbox(dat_sf))
-basemap2 <- st_rgb(basemap2)
+```{r message=FALSE, warning=FALSE}
+x <- c(t2m_2008, t2m_2018)
+names(x) <- c("t2m_2008", "t2m_2018")
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(x) +
+  tm_raster(palette = "-inferno",
+            alpha = 0.75, 
+            style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
 ```
 
 ```{r message=FALSE, warning=FALSE}
-for(i in 1:n_vars) {
 m1 <- tm_shape(basemap2) +
   tm_raster(palette = "Greys", alpha = 0.5) +
-  tm_shape(dat_sf) +
-  tm_symbols(col = my_vars[i], 
-             size = 0.25, 
-             alpha = 0.75, 
-             style = "quantile") +
-  tm_layout(main.title = my_labels[i], 
-            legend.position = c("left", "bottom"),
-            legend.bg.color = "white",
-            legend.bg.alpha = 0.5)
+  tm_shape(t2m_d) +
+  tm_raster(alpha = 0.75, 
+            style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
 
-  print(m1)
-}
+## `tp`
+
+```{r message=FALSE, warning=FALSE}
+x <- c(tp_2008, tp_2018)
+names(x) <- c("tp_2008", "tp_2018")
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(x) +
+  tm_raster(palette = "YlGnBu",
+            alpha = 0.75, 
+            style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
+
+```{r message=FALSE, warning=FALSE}
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(tp_d) +
+  tm_raster(alpha = 0.75, 
+            style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
 ```
 
