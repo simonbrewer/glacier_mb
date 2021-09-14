@@ -84,6 +84,13 @@ Make delta
 t2m_d <- t2m_2018 - t2m_2008
 ```
 
+```{r}
+t2m_trend <- read_stars("~/Dropbox/Data/summer/era5/t2m_b.nc")
+st_crs(t2m_trend) <- 4326
+t2m_trend <- st_crop(t2m_trend, st_bbox(dat_sf))
+t2m_trend <- st_as_stars(t2m_trend)
+```
+
 ## `tp`
 
 ```{r}
@@ -111,6 +118,13 @@ Make delta
 
 ```{r}
 tp_d <- tp_2018 - tp_2008
+```
+
+```{r}
+tp_trend <- read_stars("~/Dropbox/Data/summer/era5/tp_b.nc")
+st_crs(tp_trend) <- 4326
+tp_trend <- st_crop(tp_trend, st_bbox(dat_sf))
+tp_trend <- st_as_stars(tp_trend)
 ```
 
 # Maps
@@ -157,6 +171,20 @@ m1 <- tm_shape(t2m_d) +
 print(m1)
 ```
 
+## t2m trend
+
+```{r}
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(t2m_trend) +
+  tm_raster(palette = "-PuOr",
+            alpha = 0.75, 
+            style = "quantile", midpoint = 0) +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
+
+
 ## `tp`
 
 ```{r message=FALSE, warning=FALSE}
@@ -198,3 +226,17 @@ m1 <- tm_shape(tp_d) +
   tm_layout(legend.outside = TRUE)
 print(m1)
 ```
+
+## tp trend
+
+```{r}
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(tp_trend) +
+  tm_raster(palette = "-PuOr",
+            alpha = 0.75, 
+            style = "quantile", midpoint = 0) +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
+
