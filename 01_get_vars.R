@@ -4,7 +4,7 @@ library(ggpubr)
 
 glac_sf <- st_read("./data/glacier.shp")
 
-t2m <- stack('~/Dropbox/Data/summer/era5/t2m_2001_2020_ann.nc', varname = 't2m')
+t2m <- stack('~/Dropbox/Data/summer/era5/t2m_2001_2020_amjjas.nc', varname = 't2m')
 glac_t2m <- extract(t2m, glac_sf)
 glac_t2m <- glac_t2m - 273.15
 
@@ -47,3 +47,22 @@ glac_sf$z_aspct_cos <- cos(glac_sf$z_aspct * pi / 180)
 glac_sf$z_aspct_dev <- (abs(glac_sf$z_aspct - 180) * -1) + 180
 
 cor(glac_sf$z_aspct_dev, glac_sf$mb_mwea)
+
+
+## Time series plots
+tmp <- crop(t2m, st_bbox(glac_sf))
+t2m_ts <- data.frame(t2m = as.numeric(cellStats(tmp, mean)), 
+                     year = 2001:2020)
+
+tmp <- crop(tp, st_bbox(glac_sf))
+tp_ts <- data.frame(tp = as.numeric(cellStats(tmp, mean)), 
+                     year = 2001:2020)
+library(ggpubr)
+p1 <- ggline(t2m_ts, x = "year", y = "t2m",
+             main = "2m Air Temperature (AMJJAS)", ylab = "K") +
+  geom_smooth(method = "lm", se = FALSE)
+p2 <- ggline(tp_ts, x = "year", y = "tp",
+             main = "Total precipitation", ylab = "kg m-2 s-1") +
+  geom_smooth(method = "lm", se = FALSE)
+
+ggsave("era5_2001_2020.pdf", ggarrange(p1, p2, nrow = 2))
