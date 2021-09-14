@@ -58,7 +58,7 @@ basemap2 <- st_rgb(basemap2)
 ## `t2m`
 
 ```{r}
-t2m <- read_stars("~/Dropbox/Data/summer/era5/t2m_2001_2020_ann.nc")
+t2m <- read_stars("~/Dropbox/Data/summer/era5/t2m_2001_2020_amjjas.nc")
 st_crs(t2m) <- 4326
 t2m <- st_crop(t2m, st_bbox(dat_sf))
 t2m <- st_as_stars(t2m)
