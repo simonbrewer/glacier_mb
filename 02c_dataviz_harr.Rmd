@@ -1,0 +1,222 @@
+---
+title: "02c HARR Data"
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'harr_viz.html'))})
+author: "Simon Brewer"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    theme: flatly
+    df_print: paged
+    number_sections: true
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries and what not
+
+```{r message=FALSE}
+## Base RF model
+set.seed(42)
+
+library(ggplot2)  # for autoplot() generic
+library(dplyr)
+library(sf)
+library(stars)
+library(tmap)
+```
+
+# Data preprocessing
+
+## Glaciers
+
+```{r}
+dat_sf <- st_read("./data/glacier_clim.shp")
+```
+
+
+## Basemap
+
+Load and crop basemap
+
+```{r}
+basemap <- read_stars("~/Dropbox/Data/summer/natural_earth/HYP_50M_SR_W/HYP_50M_SR_W.tif")
+
+basemap2 <- st_crop(basemap, st_bbox(dat_sf))
+basemap2 <- st_rgb(basemap2)
+```
+
+# HARR Data
+
+```{r}
+projstr <- "+proj=lcc +lon_0=83.0 +lat_0=32.0 +lat_1=32.0 +lat_2=38.0 +datum=WGS84 +no_defs"
+```
+
+## `t2`
+
+```{r}
+t2m_2008 <- read_stars("~/Dropbox/Data/summer/harr/output/t2_2008_amjjas.nc")
+st_crs(t2m_2008) <- projstr
+
+t2m_2018 <- read_stars("~/Dropbox/Data/summer/harr/output/t2_2018_amjjas.nc")
+st_crs(t2m_2018) <- projstr
+```
+
+Make delta
+
+```{r}
+t2m_d <- t2m_2018 - t2m_2008
+```
+
+```{r}
+t2m_trend <- read_stars("~/Dropbox/Data/summer/harr/output/t2_b_ann.nc")
+st_crs(t2m_trend) <- projstr
+```
+
+## `tp`
+
+```{r}
+tp_2008 <- read_stars("~/Dropbox/Data/summer/harr/output/prcp_2008_ann.nc")
+st_crs(tp_2008) <- projstr
+
+tp_2018 <- read_stars("~/Dropbox/Data/summer/harr/output/prcp_2018_ann.nc")
+st_crs(tp_2018) <- projstr
+```
+
+Make delta
+
+```{r}
+tp_d <- tp_2018 - tp_2008
+```
+
+Seasonality
+
+```{r}
+tp_seas <- read_stars("~/Dropbox/Data/summer/harr/output/prcp_2018_seas.nc")
+st_crs(tp_seas) <- projstr
+```
+
+# Maps
+
+## `t2m`
+
+```{r message=FALSE, warning=FALSE}
+x <- c(t2m_2008, t2m_2018)
+names(x) <- "2m Air Temperature (AMJJAS)"
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(x) +
+  tm_raster(palette = "-inferno",
+            alpha = 0.75, 
+            style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
+
+Plot $\delta$
+
+```{r message=FALSE, warning=FALSE}
+names(t2m_d) <- "2m Air Temperature (AMJJAS) (change 2018 - 2008)"
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(t2m_d) +
+  tm_raster(alpha = 0.75, 
+            style = "cont") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
+
+Plot $\delta$ with mass balance
+
+```{r message=FALSE, warning=FALSE}
+m1 <- tm_shape(t2m_d) +
+  tm_raster(alpha = 0.75, 
+            style = "cont") +
+  tm_shape(dat_sf) + 
+    tm_symbols(col = "mb_mwea", 
+             size = 0.25, 
+             alpha = 0.75, 
+             style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
+
+## t2m trend
+
+```{r}
+names(t2m_trend) <- "2m Air Temperature Trend (slope 1991-2020)"
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(t2m_trend) +
+  tm_raster(palette = "-PuOr",
+            alpha = 0.75, 
+            style = "cont", midpoint = 0) +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
+
+
+## `tp`
+
+```{r message=FALSE, warning=FALSE}
+x <- c(tp_2008, tp_2018)
+names(x) <- "Total precipitation (Annual)"
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(x) +
+  tm_raster(palette = "YlGnBu",
+            alpha = 0.75, 
+            style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
+
+Plot $\delta$
+
+```{r message=FALSE, warning=FALSE}
+names(tp_d) <- "Total precipitation (Annual) (change 2018 - 2008)"
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(tp_d) +
+  tm_raster(alpha = 0.75, 
+            style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
+
+Plot $\delta$ with mass balance
+
+```{r message=FALSE, warning=FALSE}
+m1 <- tm_shape(tp_d) +
+  tm_raster(alpha = 0.75, 
+            style = "quantile") +
+  tm_shape(dat_sf) + 
+    tm_symbols(col = "mb_mwea", 
+             size = 0.25, 
+             alpha = 0.75, 
+             style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
+
+## `tp` seasonality
+
+```{r}
+names(tp_seas) <- "Precipitation seasonality (JJA / ANN)"
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(tp_seas) +
+  tm_raster(palette = "-PuOr",
+            alpha = 0.75, 
+            style = "quantile", midpoint = 0) +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
+
