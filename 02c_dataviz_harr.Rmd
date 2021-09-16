@@ -109,7 +109,7 @@ st_crs(tp_seas) <- projstr
 
 ```{r message=FALSE, warning=FALSE}
 x <- c(t2m_2008, t2m_2018)
-names(x) <- "2m Air Temperature (AMJJAS)"
+names(x) <- "2m Air Temp (AMJJAS)"
 m1 <- tm_shape(basemap2) +
   tm_raster(palette = "Greys", alpha = 0.5) +
   tm_shape(x) +
@@ -123,7 +123,7 @@ print(m1)
 Plot $\delta$
 
 ```{r message=FALSE, warning=FALSE}
-names(t2m_d) <- "2m Air Temperature (AMJJAS) (change 2018 - 2008)"
+names(t2m_d) <- "2m Air Temp (AMJJAS) (change 2018 - 2008)"
 m1 <- tm_shape(basemap2) +
   tm_raster(palette = "Greys", alpha = 0.5) +
   tm_shape(t2m_d) +
@@ -132,8 +132,18 @@ m1 <- tm_shape(basemap2) +
   tm_layout(legend.outside = TRUE)
 print(m1)
 ```
+```{r message=FALSE, warning=FALSE}
+names(t2m_d) <- "2m Air Temp (AMJJAS) (change 2018 - 2008)"
+m1 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(t2m_d) +
+  tm_raster(alpha = 0.75, 
+            style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+print(m1)
+```
 
-Plot $\delta$ with mass balance
+Plot $\delta$ with mass balance (continuous scale)
 
 ```{r message=FALSE, warning=FALSE}
 m1 <- tm_shape(t2m_d) +
@@ -151,7 +161,7 @@ print(m1)
 ## t2m trend
 
 ```{r}
-names(t2m_trend) <- "2m Air Temperature Trend (slope 1991-2020)"
+names(t2m_trend) <- "2m Air Temp Trend (slope 1991-2020)"
 m1 <- tm_shape(basemap2) +
   tm_raster(palette = "Greys", alpha = 0.5) +
   tm_shape(t2m_trend) +
@@ -162,12 +172,26 @@ m1 <- tm_shape(basemap2) +
 print(m1)
 ```
 
+```{r echo=FALSE, message=FALSE}
+library(raster)
+ttr <- raster("~/Dropbox/Data/summer/harr/output/t2_b_ann.nc",
+              crs = projstr)
+ttr <- ttr > 0
+m2 <- tm_shape(basemap2) +
+  tm_raster(palette = "Greys", alpha = 0.5) +
+  tm_shape(ttr) +
+  tm_raster(alpha = 0.75, 
+            midpoint = 0, n = 3) +
+  tm_layout(legend.outside = TRUE,
+            title = "Positive trend")
+print(m2)
+```
 
 ## `tp`
 
 ```{r message=FALSE, warning=FALSE}
 x <- c(tp_2008, tp_2018)
-names(x) <- "Total precipitation (Annual)"
+names(x) <- "Total PPT (Annual)"
 m1 <- tm_shape(basemap2) +
   tm_raster(palette = "Greys", alpha = 0.5) +
   tm_shape(x) +
@@ -181,7 +205,7 @@ print(m1)
 Plot $\delta$
 
 ```{r message=FALSE, warning=FALSE}
-names(tp_d) <- "Total precipitation (Annual) (change 2018 - 2008)"
+names(tp_d) <- "Total PPT (Annual) (change 2018 - 2008)"
 m1 <- tm_shape(basemap2) +
   tm_raster(palette = "Greys", alpha = 0.5) +
   tm_shape(tp_d) +
@@ -209,7 +233,7 @@ print(m1)
 ## `tp` seasonality
 
 ```{r}
-names(tp_seas) <- "Precipitation seasonality (JJA / ANN)"
+names(tp_seas) <- "PPT seasonality (JJA / ANN)"
 m1 <- tm_shape(basemap2) +
   tm_raster(palette = "Greys", alpha = 0.5) +
   tm_shape(tp_seas) +
