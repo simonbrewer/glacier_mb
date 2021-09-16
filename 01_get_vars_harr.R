@@ -4,6 +4,21 @@ library(ggpubr)
 
 glac_sf <- st_read("./data/glacier.shp")
 
+t2m_ncfiles <- list.files("~/Dropbox/Data/summer/harr/t2",full.names=TRUE)
+
+t2m <- stack(t2m_ncfiles, varname = "t2")
+yr_id <- rep(seq(1, 30), each = 12)
+t2m_ann <- stackApply(t2m, yr_id, mean)
+
+## Get 2008 mean
+tmp <- subset(t2m_ann, c("X2006", "X2007", "X2008", "X2009", "X2010"))
+t2m_ann_2008 <- stackApply(tmp, rep(1, nlayers(tmp)), mean)
+
+## Get 2018 mean
+tmp <- subset(t2m_ann, c("X2016", "X2017", "X2018", "X2019", "X2020"))
+t2m_ann_2018 <- stackApply(tmp, rep(1, nlayers(tmp)), mean)
+
+
 t2m <- stack('~/Dropbox/Data/summer/era5/t2m_2001_2020_amjjas.nc', varname = 't2m')
 glac_t2m <- extract(t2m, glac_sf)
 glac_t2m <- glac_t2m - 273.15
