@@ -5,16 +5,13 @@ library(INLA)
 
 ## Create INLA graph
 
-dat_sf <- st_read("./data/glacier_clim.shp")
+dat_sf <- st_read("./data/glacier.shp")
 # dat_sf <- dat_sf[sample(1:nrow(dat_sf), 5000), ]
 
 dat <- dat_sf %>%
-  st_drop_geometry() %>% 
-  dplyr::select(mb_mwea, area_km2, z_min, z_med, z_max, z_aspct, z_slope,
-                east, north, tau,
-                t2m_18, t2m_d, tp_18, tp_d, tpseas_18, tpseas_d) 
+  st_drop_geometry() 
 # %>%
-#   sample_n(95086)
+#   sample_n(nrow(dat_sf))
 
 # crds <- st_coordinates(dat)
 coords <- cbind(dat$east / 1000,

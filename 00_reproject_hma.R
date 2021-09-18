@@ -1,9 +1,14 @@
 ## Needs updating to sf
+set.seed(42)
 library(sp)
 library(rgdal)
+library(dplyr)
 
 crds <- read.csv("./data/HMA_glacier_mass-balance_090221.csv", 
                  na.strings = "nan")
+
+crds <- crds %>%
+  sample_n(nrow(crds))
 
 x <- crds$x
 y <- crds$y
