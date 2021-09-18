@@ -47,6 +47,7 @@ dat <- dat_sf %>%
 # %>%
 #   sample_n(5000)
 ```
+
 ## Scaling
 
 ```{r}
@@ -71,12 +72,12 @@ dat <- dat %>%
 dat$idarea <- 1:nrow(dat)
 
 # crds <- st_coordinates(dat)
-coo <- cbind(dat$east / 1000,
-             dat$north / 1000)
-
-nb <- graph2nb(gabrielneigh(coo), sym = TRUE)
-
-nb2INLA("map.adj", nb)
+# coo <- cbind(dat$east / 1000,
+#              dat$north / 1000)
+# 
+# nb <- graph2nb(gabrielneigh(coo), sym = TRUE)
+# 
+# nb2INLA("map.adj", nb)
 g <- inla.read.graph("map.adj")
 ```
 
