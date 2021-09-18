@@ -3,6 +3,9 @@ library(stars)
 library(ggpubr)
 
 glac_sf <- st_read("./data/glacier.shp")
+## Convert area to km2
+glac_sf$area_km2 <- glac_sf$area_m2 * 1e-6
+
 harr_projstr <- "+proj=lcc +lon_0=83.0 +lat_0=32.0 +lat_1=32.0 +lat_2=38.0 +datum=WGS84 +no_defs"
 
 ## T2
