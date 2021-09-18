@@ -1,83 +1,90 @@
 library(sf)
-library(raster)
+library(stars)
 library(ggpubr)
 
 glac_sf <- st_read("./data/glacier.shp")
+harr_projstr <- "+proj=lcc +lon_0=83.0 +lat_0=32.0 +lat_1=32.0 +lat_2=38.0 +datum=WGS84 +no_defs"
 
-t2m_ncfiles <- list.files("~/Dropbox/Data/summer/harr/t2",full.names=TRUE)
+## T2
+t2_amjjas_2008 <- read_stars("~/Dropbox/Data/summer/harr/output/t2_2008_amjjas.nc")
+st_crs(t2_amjjas_2008) <- harr_projstr
+names(t2_amjjas_2008) <- "t2_amjjas_2008"
 
-t2m <- stack(t2m_ncfiles, varname = "t2")
-yr_id <- rep(seq(1, 30), each = 12)
-t2m_ann <- stackApply(t2m, yr_id, mean)
+t2_amjjas_2018 <- read_stars("~/Dropbox/Data/summer/harr/output/t2_2018_amjjas.nc")
+st_crs(t2_amjjas_2018) <- harr_projstr
+names(t2_amjjas_2018) <- "t2_amjjas_2018"
 
-## Get 2008 mean
-tmp <- subset(t2m_ann, c("X2006", "X2007", "X2008", "X2009", "X2010"))
-t2m_ann_2008 <- stackApply(tmp, rep(1, nlayers(tmp)), mean)
+t2_amjjas_delta <- t2_amjjas_2018 - t2_amjjas_2008
+names(t2_amjjas_delta) <- "t2_amjjas_delta"
 
-## Get 2018 mean
-tmp <- subset(t2m_ann, c("X2016", "X2017", "X2018", "X2019", "X2020"))
-t2m_ann_2018 <- stackApply(tmp, rep(1, nlayers(tmp)), mean)
+t2_amjjas_trend <- read_stars("~/Dropbox/Data/summer/harr/output/t2_b_amjjas.nc")
+st_crs(t2_amjjas_trend) <- harr_projstr
+names(t2_amjjas_trend) <- "t2_amjjas_trend"
 
+## PRCP
+prcp_ann_2008 <- read_stars("~/Dropbox/Data/summer/harr/output/prcp_2008_ann.nc")
+st_crs(prcp_ann_2008) <- harr_projstr
+names(prcp_ann_2008) <- "prcp_ann_2008"
 
-t2m <- stack('~/Dropbox/Data/summer/era5/t2m_2001_2020_amjjas.nc', varname = 't2m')
-glac_t2m <- extract(t2m, glac_sf)
-glac_t2m <- glac_t2m - 273.15
+prcp_ann_2018 <- read_stars("~/Dropbox/Data/summer/harr/output/prcp_2018_ann.nc")
+st_crs(prcp_ann_2018) <- harr_projstr
+names(prcp_ann_2018) <- "prcp_ann_2018"
 
-tp <- stack('~/Dropbox/Data/summer/era5/tp_2001_2020_ann.nc', varname = 'tp')
-glac_tp <- extract(tp, glac_sf)
-glac_tp <- glac_tp * 24*60*60
+prcp_seas_2008 <- read_stars("~/Dropbox/Data/summer/harr/output/prcp_2008_seas.nc")
+st_crs(prcp_seas_2008) <- harr_projstr
+names(prcp_seas_2008) <- "prcp_seas_2008"
 
-glac_sf$t2m_08 <- apply(glac_t2m[, 6:10], 1, mean)
-glac_sf$t2m_18 <- apply(glac_t2m[, 16:20], 1, mean)
-glac_sf$t2m_d <- glac_sf$t2m_18 - glac_sf$t2m_08
+prcp_seas_2018 <- read_stars("~/Dropbox/Data/summer/harr/output/prcp_2018_seas.nc")
+st_crs(prcp_seas_2018) <- harr_projstr
+names(prcp_seas_2018) <- "prcp_seas_2018"
 
-glac_sf$tp_08 <- apply(glac_tp[, 6:10], 1, mean)
-glac_sf$tp_18 <- apply(glac_tp[, 16:20], 1, mean)
-glac_sf$tp_d <- glac_sf$tp_18 - glac_sf$tp_08
+prcp_ann_delta <- prcp_ann_2018 - prcp_ann_2008
+names(prcp_ann_delta) <- "prcp_ann_delta"
 
-## Summer precip
-tpjja <- stack('~/Dropbox/Data/summer/era5/tp_2001_2020_jja.nc', varname = 'tp')
-glac_tpjja <- extract(tpjja, glac_sf)
-glac_tpjja <- glac_tpjja * 24*60*60
-glac_sf$tpjja_08 <- apply(glac_tpjja[, 6:10], 1, mean)
-glac_sf$tpjja_18 <- apply(glac_tpjja[, 16:20], 1, mean)
+prcp_seas_delta <- prcp_seas_2018 - prcp_seas_2008
+names(prcp_seas_delta) <- "prcp_seas_delta"
 
-## Seasonality
-glac_sf$tpseas_08 <- glac_sf$tpjja_08 / glac_sf$tp_08
-glac_sf$tpseas_18 <- glac_sf$tpjja_18 / glac_sf$tp_18
-glac_sf$tpseas_d <- glac_sf$tpseas_18 - glac_sf$tpseas_08
+## Make 
+glac_sf2 <- st_transform(glac_sf, st_crs(t2_amjjas_2008))
 
-seas_df <- data.frame(tp_seas = c(glac_sf$tpseas_08, glac_sf$tpseas_18),
-                      time = rep(c("2008", "2018"), each = nrow(glac_sf)))
+## T2
+glac_sf$t2_w_08 <- 
+  as.vector(st_extract(t2_amjjas_2008, glac_sf2)$t2_amjjas_2008)
+glac_sf$t2_w_18 <- 
+  as.vector(st_extract(t2_amjjas_2018, glac_sf2)$t2_amjjas_2018)
+glac_sf$t2_w_d <- 
+  as.vector(st_extract(t2_amjjas_delta, glac_sf2)$t2_amjjas_delta)
+glac_sf$t2_w_b <- 
+  as.vector(st_extract(t2_amjjas_trend, glac_sf2)$t2_amjjas_trend)
 
-h1 <- gghistogram(seas_df, x = "tp_seas", facet.by = "time")
-ggsave("tp_seas.pdf", h1)
+## PRCP
+glac_sf$ppt_a_08 <- 
+  as.vector(st_extract(prcp_ann_2008, glac_sf2)$prcp_ann_2008)
+glac_sf$ppt_a_18 <- 
+  as.vector(st_extract(prcp_ann_2018, glac_sf2)$prcp_ann_2018)
+glac_sf$ppt_s_08 <- 
+  as.vector(st_extract(prcp_seas_2008, glac_sf2)$prcp_seas_2008)
+glac_sf$ppt_s_18 <- 
+  as.vector(st_extract(prcp_seas_2018, glac_sf2)$prcp_seas_2018)
+glac_sf$ppt_a_d <- 
+  as.vector(st_extract(prcp_ann_delta, glac_sf2)$prcp_ann_delta)
+glac_sf$ppt_s_d <- 
+  as.vector(st_extract(prcp_seas_delta, glac_sf2)$prcp_seas_delta)
 
-glac_sf$area_km2 <- glac_sf$area_m2 / 1e6
+## summary
+summary(glac_sf)
 
 st_write(glac_sf, "./data/glacier_clim.shp", append = FALSE)
 
-glac_sf$z_aspct_sin <- sin(glac_sf$z_aspct * pi / 180)
-glac_sf$z_aspct_cos <- cos(glac_sf$z_aspct * pi / 180)
-glac_sf$z_aspct_dev <- (abs(glac_sf$z_aspct - 180) * -1) + 180
+## Quick map check
+library(tmap)
 
-cor(glac_sf$z_aspct_dev, glac_sf$mb_mwea)
+tm_shape(t2_amjjas_2008) +
+  tm_raster() +
+  tm_shape(glac_sf2) +
+  tm_symbols("mb_mwea")
 
-
-## Time series plots
-tmp <- crop(t2m, st_bbox(glac_sf))
-t2m_ts <- data.frame(t2m = as.numeric(cellStats(tmp, mean)), 
-                     year = 2001:2020)
-
-tmp <- crop(tp, st_bbox(glac_sf))
-tp_ts <- data.frame(tp = as.numeric(cellStats(tmp, mean)), 
-                     year = 2001:2020)
-library(ggpubr)
-p1 <- ggline(t2m_ts, x = "year", y = "t2m",
-             main = "2m Air Temperature (AMJJAS)", ylab = "K") +
-  geom_smooth(method = "lm", se = FALSE)
-p2 <- ggline(tp_ts, x = "year", y = "tp",
-             main = "Total precipitation", ylab = "kg m-2 s-1") +
-  geom_smooth(method = "lm", se = FALSE)
-
-ggsave("era5_2001_2020.pdf", ggarrange(p1, p2, nrow = 2))
+tm_shape(prcp_ann_2008) +
+  tm_raster(style = "quantile") +
+  tm_shape(glac_sf2) +
+  tm_symbols("mb_mwea")
