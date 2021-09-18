@@ -56,17 +56,17 @@ basemap2 <- st_rgb(basemap2)
 # HARR Data
 
 ```{r}
-projstr <- "+proj=lcc +lon_0=83.0 +lat_0=32.0 +lat_1=32.0 +lat_2=38.0 +datum=WGS84 +no_defs"
+harr_projstr <- "+proj=lcc +lon_0=83.0 +lat_0=32.0 +lat_1=32.0 +lat_2=38.0 +datum=WGS84 +no_defs"
 ```
 
 ## `t2`
 
 ```{r}
 t2m_2008 <- read_stars("~/Dropbox/Data/summer/harr/output/t2_2008_amjjas.nc")
-st_crs(t2m_2008) <- projstr
+st_crs(t2m_2008) <- harr_projstr
 
 t2m_2018 <- read_stars("~/Dropbox/Data/summer/harr/output/t2_2018_amjjas.nc")
-st_crs(t2m_2018) <- projstr
+st_crs(t2m_2018) <- harr_projstr
 ```
 
 Make delta
@@ -77,17 +77,17 @@ t2m_d <- t2m_2018 - t2m_2008
 
 ```{r}
 t2m_trend <- read_stars("~/Dropbox/Data/summer/harr/output/t2_b_ann.nc")
-st_crs(t2m_trend) <- projstr
+st_crs(t2m_trend) <- harr_projstr
 ```
 
 ## `tp`
 
 ```{r}
 tp_2008 <- read_stars("~/Dropbox/Data/summer/harr/output/prcp_2008_ann.nc")
-st_crs(tp_2008) <- projstr
+st_crs(tp_2008) <- harr_projstr
 
 tp_2018 <- read_stars("~/Dropbox/Data/summer/harr/output/prcp_2018_ann.nc")
-st_crs(tp_2018) <- projstr
+st_crs(tp_2018) <- harr_projstr
 ```
 
 Make delta
@@ -100,7 +100,7 @@ Seasonality
 
 ```{r}
 tp_seas <- read_stars("~/Dropbox/Data/summer/harr/output/prcp_2018_seas.nc")
-st_crs(tp_seas) <- projstr
+st_crs(tp_seas) <- harr_projstr
 ```
 
 # Maps
@@ -175,7 +175,7 @@ print(m1)
 ```{r echo=FALSE, message=FALSE}
 library(raster)
 ttr <- raster("~/Dropbox/Data/summer/harr/output/t2_b_ann.nc",
-              crs = projstr)
+              crs = harr_projstr)
 ttr <- ttr > 0
 m2 <- tm_shape(basemap2) +
   tm_raster(palette = "Greys", alpha = 0.5) +
