@@ -44,11 +44,13 @@ dat_sf <- st_read("./data/glacier_clim.shp")
 
 ```{r}
 my_vars <- c("mb_mwea", "area_km2", "z_med", "hi", "z_aspct", "z_slope", "tau",
-             "t2m_18", "t2m_d", "tp_18", "tp_d", "tpseas_18", "tpseas_d")
+             "t2_w_18", "t2_w_d", "t2_w_b", 
+             "ppt_a_18", "ppt_a_d", "ppt_s_18", "ppt_s_d")
 my_labels <- c("Mass balance", "Area (km2)", "Median elevation", "Hypsometry",
                "Aspect", "Slope", "tau", 
                "2m temperature (AMJJAS; 2018)",
                "2m temperature change (AMJJAS; 2018 - 2008)",
+               "2m temperature trend (AMJJAS; 1991 - 2020)",
                "Annual precipitation (2018)",
                "Annual precipitation change (2018 - 2008)",
                "Precipitation seasonality (2018)",
@@ -115,8 +117,8 @@ print(p1)
 ```
 
 ```{r message=FALSE, warning=FALSE}
-dat$ltp_18 <- log(dat$tp_18)
-p1 <- gghistogram(dat, "ltp_18")
+dat$lppt_a_18 <- log(dat$ppt_a_18)
+p1 <- gghistogram(dat, "lppt_a_18")
 print(p1)
 ```
 
