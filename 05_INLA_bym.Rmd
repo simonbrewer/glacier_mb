@@ -43,12 +43,23 @@ dat <- dat_sf %>%
   st_drop_geometry() %>% 
   dplyr::select(mb_mwea, area_km2, z_min, z_med, z_max, z_aspct, z_slope,
                 east, north, tau,
-                t2m_18, t2m_d, tp_18, tp_d, tpseas_18, tpseas_d) 
+                t2_w_18, t2_w_b, 
+                ppt_a_18, ppt_a_d, ppt_s_18, ppt_s_d) 
 # %>%
 #   sample_n(5000)
 ```
+### Log-transform
 
-## Scaling
+```{r}
+dat <- dat %>%
+  mutate(area_km2 = log(area_km2),
+         z_slope = log(z_slope),
+         tau = log(tau),
+         ppt_s_18 = log(ppt_s_18)
+  )
+```
+
+### Scaling
 
 ```{r}
 dat <- dat %>%
@@ -57,12 +68,12 @@ dat <- dat %>%
          z_aspct = scale(z_aspct),
          z_slope = scale(z_slope),
          tau = scale(tau),
-         t2m_18 = scale(t2m_18),
-         tp_18 = scale(tp_18),
-         t2m_d = scale(t2m_d),
-         tp_d = scale(tp_d),
-         tpseas_18 = scale(tpseas_18),
-         tpseas_d = scale(tpseas_d)
+         t2_w_18 = scale(t2_w_18),
+         t2_w_b = scale(t2_w_b),
+         ppt_a_18 = scale(ppt_a_18),
+         ppt_a_d = scale(ppt_a_d),
+         ppt_s_18 = scale(ppt_s_18),
+         ppt_s_d = scale(ppt_s_d)
   )
 ```
 
@@ -81,7 +92,9 @@ dat$idarea <- 1:nrow(dat)
 g <- inla.read.graph("map.adj")
 ```
 
-# INLA model
+# INLA
+
+## Model setup
 
 Priors
 
@@ -99,10 +112,14 @@ prior_bym2 <- list(
 )
 ```
 
+## No interaction
+
 ```{r}
-f1 <- mb_mwea ~ t2m_d * t2m_18 + t2m_d * tp_18 + tp_d + 
-  tpseas_18 + tpseas_d +
-  tau * z_med + z_slope + z_aspct + area_km2 +
+f1 <- mb_mwea ~ 
+  t2_w_b + t2_w_18 + 
+  ppt_a_18 + ppt_a_d + 
+  ppt_s_18 + ppt_s_d +
+  tau + z_med + z_slope + z_aspct + area_km2 +
   f(idarea, model = "bym2", graph = g, hyper = prior_bym2)
 
 system.time(
@@ -112,7 +129,7 @@ system.time(
 )
 ```
 
-## Model output
+### Model output
 
 ```{r}
 summary(res1)
@@ -124,16 +141,18 @@ plot_hyper_marginals(res1)
 ```
 
 
-## Obs vs pred
+### Obs vs pred
 
 ```{r}
 plot_df <- data.frame(obs = dat$mb_mwea,
                       pred = res1$summary.fitted.values$mean)
 ggplot(plot_df, aes(x = obs, y = pred)) +
-  geom_point()
+  geom_point() +
+  ggtitle("No interaction model") +
+  theme_bw()
 ```
 
-## Map spatial effect
+### Map spatial effect
 
 ```{r message = FALSE}
 # spatial_re <- res1$summary.random$idarea
@@ -150,13 +169,15 @@ ggplot(plot_df, aes(x = obs, y = pred)) +
 # print(m2)
 ```
 
-# No interactions
+## With interaction
 
 ```{r}
-f2 <- mb_mwea ~ t2m_d + t2m_18 + tp_d + 
-  z_slope + z_aspct + z_med + 
-  tau + area_km2 +
-  f(idarea, model = "bym", graph = g, hyper = prior_bym)
+f2 <- mb_mwea ~ 
+  t2_w_b * t2_w_18 + 
+  t2_w_b * ppt_a_18 + ppt_a_d + 
+  ppt_s_18 + ppt_s_d +
+  tau * z_med + z_slope + z_aspct + area_km2 +
+  f(idarea, model = "bym2", graph = g, hyper = prior_bym2)
 
 system.time(
   res2 <- inla(f2, data = dat,
@@ -165,7 +186,7 @@ system.time(
 )
 ```
 
-## Model output
+### Model output
 
 ```{r}
 summary(res2)
@@ -174,5 +195,17 @@ summary(res2)
 ```{r}
 plot_fixed_marginals(res2)
 plot_hyper_marginals(res2)
+```
+
+
+### Obs vs pred
+
+```{r}
+plot_df <- data.frame(obs = dat$mb_mwea,
+                      pred = res2$summary.fitted.values$mean)
+ggplot(plot_df, aes(x = obs, y = pred)) +
+  geom_point() +
+  ggtitle("Interaction model") +
+  theme_bw()
 ```
 
