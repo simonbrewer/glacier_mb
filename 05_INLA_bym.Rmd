@@ -26,6 +26,7 @@ knitr::opts_chunk$set(echo = TRUE)
 set.seed(42)
 
 library(dplyr)
+library(ggpubr)
 library(sf)
 library(spdep)
 library(INLA)
@@ -192,6 +193,8 @@ system.time(
 summary(res2)
 ```
 
+
+
 ```{r}
 plot_fixed_marginals(res2)
 plot_hyper_marginals(res2)
@@ -207,5 +210,66 @@ ggplot(plot_df, aes(x = obs, y = pred)) +
   geom_point() +
   ggtitle("Interaction model") +
   theme_bw()
+```
+
+## Interaction plots
+
+Extract coefficients
+
+```{r}
+coefs <- res2$summary.fixed
+```
+
+### tau + z_med
+
+```{r}
+b0 <- res2$summary.fixed[rownames(res2$summary.fixed) == "(Intercept)", "mean"]
+b1 <- coefs[which(rownames(coefs) == "tau"), "mean"]
+x1 <- seq(-3, 3, length = 100) ## Violent crime
+b2 <- coefs[which(rownames(coefs) == "z_med"), "mean"]
+x2 <- seq(-3, 3) ## PerWhite
+b3 <- coefs[which(rownames(coefs) == "tau:z_med"), "mean"]
+
+mydf <- expand.grid(tau = x1, z_med = x2)
+
+mydf$yhat <- b0 + b1 * mydf$tau + b2 * mydf$z_med +
+  b3 * (mydf$tau * mydf$z_med)
+
+mydf$z_med <- as.factor(mydf$z_med)
+
+p1 <- ggline(mydf, x = "tau", y = "yhat", 
+             col = "z_med", numeric.x.axis = TRUE, 
+             size = 1.5, plot_type = 'l',
+             xlab = "log(tau)",
+             ylab = "mb_mwea", 
+             main = "Interaction tau/z_med")
+print(p1)
+```
+
+
+### t2_w_b:t2_w_18
+
+```{r}
+b0 <- res2$summary.fixed[rownames(res2$summary.fixed) == "(Intercept)", "mean"]
+b1 <- coefs[which(rownames(coefs) == "t2_w_b"), "mean"]
+x1 <- seq(-3, 3, length = 100) ## Violent crime
+b2 <- coefs[which(rownames(coefs) == "t2_w_18"), "mean"]
+x2 <- seq(-3, 3) ## PerWhite
+b3 <- coefs[which(rownames(coefs) == "t2_w_b:t2_w_18"), "mean"]
+
+mydf <- expand.grid(t2_w_b = x1, t2_w_18 = x2)
+
+mydf$yhat <- b0 + b1 * mydf$t2_w_b + b2 * mydf$t2_w_18 +
+  b3 * (mydf$t2_w_b * mydf$t2_w_18)
+
+mydf$t2_w_18 <- as.factor(mydf$t2_w_18)
+
+p2 <- ggline(mydf, x = "t2_w_b", y = "yhat", 
+             col = "t2_w_18", numeric.x.axis = TRUE, 
+             size = 1.5, plot_type = 'l',
+             xlab = "T2 slope",
+             ylab = "mb_mwea", 
+             main = "Interaction t2_w_b/t2_w_18")
+print(p2)
 ```
 
