@@ -42,7 +42,8 @@ dat_sf <- st_read("./data/glacier_clim.shp")
 
 dat <- dat_sf %>%
   st_drop_geometry() %>% 
-  dplyr::select(mb_mwea, area_km2, z_min, z_med, z_max, z_aspct, z_slope,
+  dplyr::select(mb_mwea, area_km2, 
+                z_min, z_med, z_max, z_aspct, z_slope, hi,
                 east, north, tau,
                 t2_w_18, t2_w_b, 
                 ppt_a_18, ppt_a_d, ppt_s_18, ppt_s_d) 
@@ -68,13 +69,14 @@ dat <- dat %>%
          z_med = scale(z_med),
          z_aspct = scale(z_aspct),
          z_slope = scale(z_slope),
+         hi = scale(hi),
          tau = scale(tau),
          t2_w_18 = scale(t2_w_18),
-         t2_w_b = scale(t2_w_b),
+         t2_w_b = scale(t2_w_b, center = FALSE),
          ppt_a_18 = scale(ppt_a_18),
-         ppt_a_d = scale(ppt_a_d),
+         ppt_a_d = scale(ppt_a_d, center = FALSE),
          ppt_s_18 = scale(ppt_s_18),
-         ppt_s_d = scale(ppt_s_d)
+         ppt_s_d = scale(ppt_s_d, center = FALSE)
   )
 ```
 
@@ -120,7 +122,8 @@ f1 <- mb_mwea ~
   t2_w_b + t2_w_18 + 
   ppt_a_18 + ppt_a_d + 
   ppt_s_18 + ppt_s_d +
-  tau + z_med + z_slope + z_aspct + area_km2 +
+  tau + hi + 
+  z_med + z_slope + z_aspct + area_km2 +
   f(idarea, model = "bym2", graph = g, hyper = prior_bym2)
 
 system.time(
@@ -177,6 +180,7 @@ f2 <- mb_mwea ~
   t2_w_b * t2_w_18 + 
   t2_w_b * ppt_a_18 + ppt_a_d + 
   ppt_s_18 + ppt_s_d +
+  hi +
   tau * z_med + z_slope + z_aspct + area_km2 +
   f(idarea, model = "bym2", graph = g, hyper = prior_bym2)
 
