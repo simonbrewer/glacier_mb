@@ -1,0 +1,97 @@
+---
+title: "Glacier model coefficients"
+author: "Simon Brewer"
+date: "10/6/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+```{r echo = FALSE}
+library(ggplot2)
+library(ggregplot)
+library(stringr)
+library(INLA)
+load("models.RData")
+```
+
+
+## Model without interactions
+
+```{r}
+var_names <- 
+  c("Intercept",
+    "T2m trend (1991-2020)",
+    "T2m (2018)",
+    "PPT annual (2018)",
+    "PPT annual change (2008 - 2018)",
+    "PPT seasonal (2018)",
+    "PPT seasonal change (2008 - 2018)",
+    "tau",
+    "hypsometry",
+    "Median elevation",
+    "Slope",
+    "Aspect",
+    "Area"
+    )
+coefs <- round(res1$summary.fixed, 4)
+tab_df <- data.frame(variable = var_names,
+                     mean = coefs$mean,
+                     CI = paste0("(", coefs$`0.025quant`, ", ",
+                                 coefs$`0.975quant`, ")")
+                     )
+knitr::kable(tab_df)
+```
+
+```{r echo=FALSE}
+Efxplot(res1, Intercept = FALSE, VarNames = var_names) +
+  theme_bw() + theme(legend.position = "none")
+```
+
+\break 
+
+## Model with interactions
+
+```{r}
+var_names <- 
+  c("Intercept",
+    "T2m trend (1991-2020)",
+    "T2m (2018)",
+    "PPT annual (2018)",
+    "PPT annual change (2008 - 2018)",
+    "PPT seasonal (2018)",
+    "PPT seasonal change (2008 - 2018)",
+    "tau",
+    "hypsometry",
+    "Median elevation",
+    "Slope",
+    "Aspect",
+    "Area",
+    "Interaction T2m trend:T2m (2018)",
+    "Interaction T2m trend:PPT (2018)",
+    "Interaction tau:Med. elevation"
+    )
+coefs <- round(res2$summary.fixed, 4)
+tab_df <- data.frame(variable = var_names,
+                     mean = coefs$mean,
+                     CI = paste0("(", coefs$`0.025quant`, ", ",
+                                 coefs$`0.975quant`, ")")
+                     )
+knitr::kable(tab_df)
+```
+
+```{r echo=FALSE}
+Efxplot(res2, Intercept = FALSE, VarNames = var_names) +
+  theme_bw() + theme(legend.position = "none")
+```
+
+\break
+
+## Model comparison
+
+```{r echo=FALSE}
+Efxplot(list(res1, res2), Intercept = FALSE) +
+  theme_bw()
+```
