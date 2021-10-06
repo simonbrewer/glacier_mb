@@ -4,7 +4,7 @@ knit: (function(input_file, encoding) {
   out_dir <- 'docs';
   rmarkdown::render(input_file,
  encoding=encoding,
- output_file=file.path(dirname(input_file), out_dir, 'mb_INLA.html'))})
+ output_file=file.path(dirname(input_file), out_dir, 'mb_INLA_zscr.html'))})
 author: "Simon Brewer"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -32,6 +32,8 @@ library(spdep)
 library(INLA)
 library(INLAutils)
 library(tmap)
+library(ggregplot)
+library(stringr)
 ```
 
 # Data processing
@@ -72,11 +74,11 @@ dat <- dat %>%
          hi = scale(hi),
          tau = scale(tau),
          t2_w_18 = scale(t2_w_18),
-         t2_w_b = scale(t2_w_b, center = FALSE),
+         t2_w_b = scale(t2_w_b, center = TRUE),
          ppt_a_18 = scale(ppt_a_18),
-         ppt_a_d = scale(ppt_a_d, center = FALSE),
+         ppt_a_d = scale(ppt_a_d, center = TRUE),
          ppt_s_18 = scale(ppt_s_18),
-         ppt_s_d = scale(ppt_s_d, center = FALSE)
+         ppt_s_d = scale(ppt_s_d, center = TRUE)
   )
 ```
 
@@ -139,6 +141,23 @@ system.time(
 summary(res1)
 ```
 
+Table of coefficients
+
+```{r}
+coefs <- round(res1$summary.fixed, 4)
+tab_df <- data.frame(variable = row.names(coefs),
+                     mean = coefs$mean,
+                     CI = paste0("(", coefs$`0.025quant`, ", ",
+                                 coefs$`0.975quant`, ")")
+                     )
+knitr::kable(tab_df)
+```
+
+```{r}
+Efxplot(res1, Intercept = FALSE) + 
+  theme_bw()
+```
+
 ```{r}
 plot_fixed_marginals(res1)
 plot_hyper_marginals(res1)
@@ -197,7 +216,20 @@ system.time(
 summary(res2)
 ```
 
+```{r}
+coefs <- round(res2$summary.fixed, 4)
+tab_df <- data.frame(variable = row.names(coefs),
+                     mean = coefs$mean,
+                     CI = paste0("(", coefs$`0.025quant`, ", ",
+                                 coefs$`0.975quant`, ")")
+                     )
+knitr::kable(tab_df)
+```
 
+```{r}
+Efxplot(res2, Intercept = FALSE) + 
+  theme_bw()
+```
 
 ```{r}
 plot_fixed_marginals(res2)
@@ -277,3 +309,6 @@ p2 <- ggline(mydf, x = "t2_w_b", y = "yhat",
 print(p2)
 ```
 
+```{r}
+save(res1, res2, file = "models.RData")
+```
